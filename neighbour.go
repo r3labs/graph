@@ -5,12 +5,12 @@
 package graph
 
 // Neighbours represents a collection of dependent vertices
-type Neighbours []string
+type Neighbours []Vertex
 
 // Exists checks if the group contains the vertex
 func (n *Neighbours) Exists(vertex string) bool {
 	for _, v := range *n {
-		if v == vertex {
+		if v.Name() == vertex {
 			return true
 		}
 	}
@@ -22,7 +22,7 @@ func (n *Neighbours) Unique() *Neighbours {
 	un := Neighbours{}
 
 	for _, v := range *n {
-		if !un.Exists(v) {
+		if !un.Exists(v.Name()) {
 			un = append(un, v)
 		}
 	}

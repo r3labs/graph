@@ -6,8 +6,8 @@ package graph
 
 // Edge ...
 type Edge struct {
-	Source      string `json:"source"`
-	Destination string `json:"destination"`
+	Source      string `json:"from"`
+	Destination string `json:"to"`
 	Event       string `json:"event"`
 	Length      int    `json:"-"`
 }

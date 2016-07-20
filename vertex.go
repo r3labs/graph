@@ -7,5 +7,4 @@ package graph
 // Vertex stores
 type Vertex interface {
 	Name() string
-	Handler(interface{}) (string, error)
 }

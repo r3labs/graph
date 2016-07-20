@@ -19,10 +19,6 @@ func (tv *testVertex) Name() string {
 	return tv.name
 }
 
-func (tv *testVertex) Handler(data interface{}) (string, error) {
-	return "", nil
-}
-
 func TestGraph(t *testing.T) {
 	Convey("Given a new graph", t, func() {
 		g := New()
@@ -90,8 +86,8 @@ func TestGraph(t *testing.T) {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
 				So(len(*origins), ShouldEqual, 2)
-				So((*origins)[0], ShouldEqual, "test2")
-				So((*origins)[1], ShouldEqual, "test3")
+				So((*origins)[0].Name(), ShouldEqual, "test2")
+				So((*origins)[1].Name(), ShouldEqual, "test3")
 			})
 		})
 
@@ -106,9 +102,40 @@ func TestGraph(t *testing.T) {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
 				So(len(*neighbours), ShouldEqual, 2)
-				So((*neighbours)[0], ShouldEqual, "test2")
-				So((*neighbours)[1], ShouldEqual, "test3")
+				So((*neighbours)[0].Name(), ShouldEqual, "test2")
+				So((*neighbours)[1].Name(), ShouldEqual, "test3")
 			})
+		})
+
+		Convey("When disconnecting a vertex from the graph", func() {
+			g.AddVertex(&testVertex{name: "test1"})
+			g.AddVertex(&testVertex{name: "test2"})
+			g.AddVertex(&testVertex{name: "test3"})
+			g.AddVertex(&testVertex{name: "test4"})
+			g.AddVertex(&testVertex{name: "test5"})
+			erra := g.Connect("test1", "test2", "test")
+			errb := g.Connect("test2", "test3", "test")
+			errc := g.Connect("test2", "test4", "test")
+			errd := g.Connect("test4", "test5", "test")
+			err := g.DisconnectVertex("test2")
+			Convey("It should disconnect matching edges and reconnect them", func() {
+				So(erra, ShouldBeNil)
+				So(errb, ShouldBeNil)
+				So(errc, ShouldBeNil)
+				So(errd, ShouldBeNil)
+				So(err, ShouldBeNil)
+				So(len(g.Edges), ShouldEqual, 3)
+				So(g.Edges[0].Source, ShouldEqual, "test4")
+				So(g.Edges[0].Destination, ShouldEqual, "test5")
+				So(g.Edges[0].Event, ShouldEqual, "test")
+				So(g.Edges[1].Source, ShouldEqual, "test1")
+				So(g.Edges[1].Destination, ShouldEqual, "test4")
+				So(g.Edges[1].Event, ShouldEqual, "test")
+				So(g.Edges[2].Source, ShouldEqual, "test1")
+				So(g.Edges[2].Destination, ShouldEqual, "test3")
+				So(g.Edges[2].Event, ShouldEqual, "test")
+			})
+
 		})
 
 		Convey("When getting a vertex by name", func() {

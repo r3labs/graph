@@ -70,13 +70,38 @@ func (g *Graph) ConnectMutually(source, destination, event string) error {
 	return g.Connect(destination, source, event)
 }
 
+// DisconnectVertex removes a vertex from the graph. It will connect any neighbour/origin verticies together
+func (g *Graph) DisconnectVertex(name string) error {
+	origins := g.Origins(name)
+
+	for i := len(g.Edges) - 1; i >= 0; i-- {
+		// Remove any edges that connect to the disconnected vertex
+		if g.Edges[i].Destination == name {
+			g.Edges = append(g.Edges[:i], g.Edges[i+1:]...)
+		}
+
+		// Remove any neighbouring connections and reconnect them to origins
+		if g.Edges[i].Source == name {
+			for _, ov := range *origins {
+				err := g.Connect(ov.Name(), g.Edges[i].Destination, g.Edges[i].Event)
+				if err != nil {
+					return err
+				}
+			}
+			g.Edges = append(g.Edges[:i], g.Edges[i+1:]...)
+		}
+	}
+
+	return nil
+}
+
 // Neighbours returns all depencencies of a vertex
 func (g *Graph) Neighbours(vertex string) *Neighbours {
 	n := Neighbours{}
 
 	for _, edge := range g.Edges {
 		if edge.Source == vertex {
-			n = append(n, edge.Destination)
+			n = append(n, g.Vertex(edge.Destination))
 		}
 	}
 
@@ -89,7 +114,7 @@ func (g *Graph) Origins(vertex string) *Neighbours {
 
 	for _, edge := range g.Edges {
 		if edge.Destination == vertex {
-			n = append(n, edge.Source)
+			n = append(n, g.Vertex(edge.Source))
 		}
 	}
 
