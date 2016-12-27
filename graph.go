@@ -4,12 +4,17 @@
 
 package graph
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+)
 
 // Graph ...
 type Graph struct {
-	Vertices []Vertex
-	Edges    []Edge `json:"arcs"`
+	Vertices []Vertex `json:"verticies"`
+	Edges    []Edge   `json:"edges"`
 }
 
 // New returns a new graph
@@ -21,57 +26,67 @@ func New() *Graph {
 }
 
 // AddVertex adds a vertex to the graphs vertices if it does not already exist
-func (g *Graph) AddVertex(vertex Vertex) {
-	for _, v := range g.Vertices {
-		if v.Name() == vertex.Name() {
-			return
-		}
+func (g *Graph) AddVertex(vertex Vertex) error {
+	if g.HasVertex(vertex.NodeID()) {
+		return errors.New("Vertex already exists")
 	}
 	g.Vertices = append(g.Vertices, vertex)
+
+	return nil
 }
 
 // HasVertex finds if the specified vertex exists
-func (g *Graph) HasVertex(name string) bool {
+func (g *Graph) HasVertex(vertex string) bool {
 	for _, v := range g.Vertices {
-		if v.Name() == name {
+		if v.NodeID() == vertex {
 			return true
 		}
 	}
 	return false
 }
 
-// Vertex retuns the matching vertex by name
-func (g *Graph) Vertex(name string) Vertex {
-	for _, v := range g.Vertices {
-		if v.Name() == name {
-			return v
+// Vertex returns a vertex given the name matches
+func (g *Graph) Vertex(vertex string) Vertex {
+	for i, v := range g.Vertices {
+		if v.NodeID() == vertex {
+			return g.Vertices[i]
 		}
 	}
 	return nil
 }
 
+// UpdateVertex updates the graph
+func (g *Graph) UpdateVertex(vertex Vertex) {
+	for i := 0; i < len(g.Vertices); i++ {
+		if g.Vertices[i].NodeID() == vertex.NodeID() {
+			g.Vertices[i] = vertex
+			return
+		}
+	}
+}
+
 // Connect adds a dependency between two vertices
-func (g *Graph) Connect(source, destination, event string) error {
+func (g *Graph) Connect(source, destination string) error {
 	if !g.HasVertex(source) || !g.HasVertex(destination) {
 		return errors.New("Could not connect vertex, does not exist")
 	}
 
-	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Event: event, Length: 1})
+	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
 
 	return nil
 }
 
 // ConnectMutually connects two vertices to eachother
-func (g *Graph) ConnectMutually(source, destination, event string) error {
-	err := g.Connect(source, destination, event)
+func (g *Graph) ConnectMutually(source, destination string) error {
+	err := g.Connect(source, destination)
 	if err != nil {
 		return err
 	}
-	return g.Connect(destination, source, event)
+	return g.Connect(destination, source)
 }
 
-// DisconnectVertex removes a vertex from the graph. It will connect any neighbour/origin verticies together
-func (g *Graph) DisconnectVertex(name string) error {
+// RemoveVertex removes a vertex from the graph. It will connect any neighbour/origin verticies together
+func (g *Graph) RemoveVertex(name string) error {
 	origins := g.Origins(name)
 
 	for i := len(g.Edges) - 1; i >= 0; i-- {
@@ -83,7 +98,7 @@ func (g *Graph) DisconnectVertex(name string) error {
 		// Remove any neighbouring connections and reconnect them to origins
 		if g.Edges[i].Source == name {
 			for _, ov := range *origins {
-				err := g.Connect(ov.Name(), g.Edges[i].Destination, g.Edges[i].Event)
+				err := g.Connect(ov.NodeID(), g.Edges[i].Destination)
 				if err != nil {
 					return err
 				}
@@ -97,7 +112,7 @@ func (g *Graph) DisconnectVertex(name string) error {
 
 // Neighbours returns all depencencies of a vertex
 func (g *Graph) Neighbours(vertex string) *Neighbours {
-	n := Neighbours{}
+	var n Neighbours
 
 	for _, edge := range g.Edges {
 		if edge.Source == vertex {
@@ -110,7 +125,7 @@ func (g *Graph) Neighbours(vertex string) *Neighbours {
 
 // Origins returns all source verticies of a vertex
 func (g *Graph) Origins(vertex string) *Neighbours {
-	n := Neighbours{}
+	var n Neighbours
 
 	for _, edge := range g.Edges {
 		if edge.Destination == vertex {
@@ -130,3 +145,44 @@ func (g *Graph) LengthBetween(source, destination string) int {
 	}
 	return -1
 }
+
+// ToJSON serialises the graph as json
+func (g *Graph) ToJSON() ([]byte, error) {
+	return json.Marshal(g)
+}
+
+// FromJSON loads the graph from json
+func (g *Graph) FromJSON(data []byte) error {
+	return json.Unmarshal(data, g)
+}
+
+// LoadEdges loads a graphs edges
+func (g *Graph) LoadEdges(edges []Edge) {
+	g.Edges = edges
+}
+
+// Graphviz outputs the graph in graphviz format
+func (g *Graph) Graphviz(start Vertex) string {
+	var output []string
+
+	output = append(output, "digraph G {")
+
+	for _, edge := range g.Edges {
+		output = append(output, fmt.Sprintf("  \"%s\" -> \"%s\"", edge.Source, edge.Destination))
+	}
+
+	output = append(output, "}")
+
+	return strings.Join(output, "\n")
+}
+
+// Diff two graphs
+func (g *Graph) Diff(og *Graph) error {
+	//for _, ov := g.Vertices {
+
+	//}
+
+	return nil
+}
+
+//func (g *Graph) DepthFirstSearch()

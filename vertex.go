@@ -4,7 +4,12 @@
 
 package graph
 
-// Vertex stores
+// Vertex ...
 type Vertex interface {
-	Name() string
+	NodeID() string
+	NodeState() string
+	SetNodeState(string)
+	NodeOperation() string
+	IsStateful() bool
+	Update(interface{}) bool
 }
