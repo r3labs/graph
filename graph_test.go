@@ -11,32 +11,52 @@ import (
 )
 
 type testVertex struct {
-	Name      string `json:"name"`
-	State     string `json:"state"`
-	Operation string `json:"operation"`
+	Name   string `json:"name"`
+	State  string `json:"state"`
+	Action string `json:"action"`
 }
 
-func (tv *testVertex) NodeID() string {
+func (tv *testVertex) GetID() string {
 	return tv.Name
 }
 
-func (tv *testVertex) NodeState() string {
+func (tv *testVertex) GetProvider() string {
+	return "test"
+}
+
+func (tv *testVertex) GetType() string {
+	return "test"
+}
+
+func (tv *testVertex) GetState() string {
 	return tv.State
 }
 
-func (tv *testVertex) SetNodeState(state string) {
+func (tv *testVertex) SetState(state string) {
 	tv.State = state
 }
 
-func (tv *testVertex) NodeOperation() string {
-	return tv.Operation
+func (tv *testVertex) GetAction() string {
+	return tv.Action
 }
 
-func (tv *testVertex) IsStateful() bool {
+func (tv *testVertex) SetAction(action string) {
+	tv.Action = action
+}
+
+func (tv *testVertex) GetGroup() string {
+	return "test"
+}
+
+func (tv *testVertex) Diff(i interface{}) {}
+
+func (tv *testVertex) Rebuild(i interface{}) {}
+
+func (tv *testVertex) Update(i interface{}) bool {
 	return true
 }
 
-func (tv *testVertex) Update(i interface{}) bool {
+func (tv *testVertex) IsStateful() bool {
 	return true
 }
 
@@ -48,7 +68,7 @@ func TestGraph(t *testing.T) {
 			g.AddVertex(&testVertex{Name: "test"})
 			Convey("It should be stored on the graph", func() {
 				So(len(g.Vertices), ShouldEqual, 1)
-				So(g.Vertices[0].NodeID(), ShouldEqual, "test")
+				So(g.Vertices[0].GetID(), ShouldEqual, "test")
 			})
 		})
 
@@ -105,8 +125,8 @@ func TestGraph(t *testing.T) {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
 				So(len(*origins), ShouldEqual, 2)
-				So((*origins)[0].NodeID(), ShouldEqual, "test2")
-				So((*origins)[1].NodeID(), ShouldEqual, "test3")
+				So((*origins)[0].GetID(), ShouldEqual, "test2")
+				So((*origins)[1].GetID(), ShouldEqual, "test3")
 			})
 		})
 
@@ -121,8 +141,8 @@ func TestGraph(t *testing.T) {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
 				So(len(*neighbours), ShouldEqual, 2)
-				So((*neighbours)[0].NodeID(), ShouldEqual, "test2")
-				So((*neighbours)[1].NodeID(), ShouldEqual, "test3")
+				So((*neighbours)[0].GetID(), ShouldEqual, "test2")
+				So((*neighbours)[1].GetID(), ShouldEqual, "test3")
 			})
 		})
 
@@ -160,7 +180,7 @@ func TestGraph(t *testing.T) {
 			vertex := g.Vertex("test2")
 			Convey("It should return the correct vertex", func() {
 				So(vertex, ShouldNotBeNil)
-				So(vertex.NodeID(), ShouldEqual, "test2")
+				So(vertex.GetID(), ShouldEqual, "test2")
 			})
 		})
 

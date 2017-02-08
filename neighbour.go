@@ -10,7 +10,7 @@ type Neighbours []Vertex
 // Exists checks if the group contains the vertex
 func (n *Neighbours) Exists(vertex string) bool {
 	for _, v := range *n {
-		if v.NodeID() == vertex {
+		if v.GetID() == vertex {
 			return true
 		}
 	}
@@ -22,7 +22,7 @@ func (n *Neighbours) Unique() *Neighbours {
 	var un Neighbours
 
 	for _, v := range *n {
-		if !un.Exists(v.NodeID()) {
+		if !un.Exists(v.GetID()) {
 			un = append(un, v)
 		}
 	}

@@ -27,7 +27,7 @@ func New() *Graph {
 
 // AddVertex adds a vertex to the graphs vertices if it does not already exist
 func (g *Graph) AddVertex(vertex Vertex) error {
-	if g.HasVertex(vertex.NodeID()) {
+	if g.HasVertex(vertex.GetID()) {
 		return errors.New("Vertex already exists")
 	}
 	g.Vertices = append(g.Vertices, vertex)
@@ -38,7 +38,7 @@ func (g *Graph) AddVertex(vertex Vertex) error {
 // HasVertex finds if the specified vertex exists
 func (g *Graph) HasVertex(vertex string) bool {
 	for _, v := range g.Vertices {
-		if v.NodeID() == vertex {
+		if v.GetID() == vertex {
 			return true
 		}
 	}
@@ -48,7 +48,7 @@ func (g *Graph) HasVertex(vertex string) bool {
 // Vertex returns a vertex given the name matches
 func (g *Graph) Vertex(vertex string) Vertex {
 	for i, v := range g.Vertices {
-		if v.NodeID() == vertex {
+		if v.GetID() == vertex {
 			return g.Vertices[i]
 		}
 	}
@@ -58,7 +58,7 @@ func (g *Graph) Vertex(vertex string) Vertex {
 // UpdateVertex updates the graph
 func (g *Graph) UpdateVertex(vertex Vertex) {
 	for i := 0; i < len(g.Vertices); i++ {
-		if g.Vertices[i].NodeID() == vertex.NodeID() {
+		if g.Vertices[i].GetID() == vertex.GetID() {
 			g.Vertices[i] = vertex
 			return
 		}
@@ -98,7 +98,7 @@ func (g *Graph) RemoveVertex(name string) error {
 		// Remove any neighbouring connections and reconnect them to origins
 		if g.Edges[i].Source == name {
 			for _, ov := range *origins {
-				err := g.Connect(ov.NodeID(), g.Edges[i].Destination)
+				err := g.Connect(ov.GetID(), g.Edges[i].Destination)
 				if err != nil {
 					return err
 				}
