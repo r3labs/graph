@@ -24,6 +24,10 @@ func (tv *testVertex) GetProvider() string {
 	return "test"
 }
 
+func (tv *testVertex) GetProviderID() string {
+	return "test"
+}
+
 func (tv *testVertex) GetType() string {
 	return "test"
 }
@@ -50,6 +54,10 @@ func (tv *testVertex) GetGroup() string {
 
 func (tv *testVertex) Dependencies() []string {
 	return []string{}
+}
+
+func (tv *testVertex) Validate() error {
+	return nil
 }
 
 func (tv *testVertex) Diff(i interface{}) {}
