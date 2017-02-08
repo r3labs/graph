@@ -17,5 +17,6 @@ type Vertex interface {
 	Diff(interface{})        // should return changelog
 	Update(interface{}) bool // updates the values stored on the component
 	Rebuild(interface{})     // rebuilds the internal state of the component, a component set is passed in
+	Dependencies() []string  // returns a collection of parent component id's
 	IsStateful() bool        // returns if the component is stateful. This is important to work out if a component can be skipped when deleting its dependencies (pruning).
 }

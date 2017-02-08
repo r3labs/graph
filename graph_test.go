@@ -48,6 +48,10 @@ func (tv *testVertex) GetGroup() string {
 	return "test"
 }
 
+func (tv *testVertex) Dependencies() []string {
+	return []string{}
+}
+
 func (tv *testVertex) Diff(i interface{}) {}
 
 func (tv *testVertex) Rebuild(i interface{}) {}
