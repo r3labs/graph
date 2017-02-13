@@ -13,53 +13,54 @@ import (
 
 // Graph ...
 type Graph struct {
-	Vertices []Vertex `json:"verticies"`
-	Edges    []Edge   `json:"edges"`
+	Components        []Component `json:"components"`
+	ChangedComponents []Component `json:"changed_components"`
+	Edges             []Edge      `json:"edges"`
 }
 
 // New returns a new graph
 func New() *Graph {
 	return &Graph{
-		Vertices: make([]Vertex, 0),
-		Edges:    make([]Edge, 0),
+		Components: make([]Component, 0),
+		Edges:      make([]Edge, 0),
 	}
 }
 
-// AddVertex adds a vertex to the graphs vertices if it does not already exist
-func (g *Graph) AddVertex(vertex Vertex) error {
-	if g.HasVertex(vertex.GetID()) {
-		return errors.New("Vertex already exists")
+// AddComponent adds a component to the graphs vertices if it does not already exist
+func (g *Graph) AddComponent(component Component) error {
+	if g.HasComponent(component.GetID()) {
+		return errors.New("Component already exists")
 	}
-	g.Vertices = append(g.Vertices, vertex)
+	g.Components = append(g.Components, component)
 
 	return nil
 }
 
-// HasVertex finds if the specified vertex exists
-func (g *Graph) HasVertex(vertex string) bool {
-	for _, v := range g.Vertices {
-		if v.GetID() == vertex {
+// HasComponent finds if the specified component exists
+func (g *Graph) HasComponent(componentID string) bool {
+	for _, v := range g.Components {
+		if v.GetID() == componentID {
 			return true
 		}
 	}
 	return false
 }
 
-// Vertex returns a vertex given the name matches
-func (g *Graph) Vertex(vertex string) Vertex {
-	for i, v := range g.Vertices {
-		if v.GetID() == vertex {
-			return g.Vertices[i]
+// Component returns a component given the name matches
+func (g *Graph) Component(component string) Component {
+	for i, v := range g.Components {
+		if v.GetID() == component {
+			return g.Components[i]
 		}
 	}
 	return nil
 }
 
-// UpdateVertex updates the graph
-func (g *Graph) UpdateVertex(vertex Vertex) {
-	for i := 0; i < len(g.Vertices); i++ {
-		if g.Vertices[i].GetID() == vertex.GetID() {
-			g.Vertices[i] = vertex
+// UpdateComponent updates the graph
+func (g *Graph) UpdateComponent(component Component) {
+	for i := 0; i < len(g.Components); i++ {
+		if g.Components[i].GetID() == component.GetID() {
+			g.Components[i] = component
 			return
 		}
 	}
@@ -67,8 +68,8 @@ func (g *Graph) UpdateVertex(vertex Vertex) {
 
 // Connect adds a dependency between two vertices
 func (g *Graph) Connect(source, destination string) error {
-	if !g.HasVertex(source) || !g.HasVertex(destination) {
-		return errors.New("Could not connect vertex, does not exist")
+	if !g.HasComponent(source) || !g.HasComponent(destination) {
+		return errors.New("Could not connect Component, does not exist")
 	}
 
 	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
@@ -85,12 +86,12 @@ func (g *Graph) ConnectMutually(source, destination string) error {
 	return g.Connect(destination, source)
 }
 
-// RemoveVertex removes a vertex from the graph. It will connect any neighbour/origin verticies together
-func (g *Graph) RemoveVertex(name string) error {
+// RemoveComponent removes a component from the graph. It will connect any neighbour/origin components together
+func (g *Graph) RemoveComponent(name string) error {
 	origins := g.Origins(name)
 
 	for i := len(g.Edges) - 1; i >= 0; i-- {
-		// Remove any edges that connect to the disconnected vertex
+		// Remove any edges that connect to the disconnected component
 		if g.Edges[i].Destination == name {
 			g.Edges = append(g.Edges[:i], g.Edges[i+1:]...)
 		}
@@ -110,26 +111,37 @@ func (g *Graph) RemoveVertex(name string) error {
 	return nil
 }
 
-// Neighbours returns all depencencies of a vertex
-func (g *Graph) Neighbours(vertex string) *Neighbours {
+// ComponentByProviderID : returns a single component by matching provider id
+func (g *Graph) ComponentByProviderID(id string) Component {
+	for _, component := range g.Components {
+		if component.GetProviderID() == id {
+			return component
+		}
+	}
+
+	return nil
+}
+
+// Neighbours returns all depencencies of a component
+func (g *Graph) Neighbours(component string) *Neighbours {
 	var n Neighbours
 
 	for _, edge := range g.Edges {
-		if edge.Source == vertex {
-			n = append(n, g.Vertex(edge.Destination))
+		if edge.Source == component {
+			n = append(n, g.Component(edge.Destination))
 		}
 	}
 
 	return n.Unique()
 }
 
-// Origins returns all source verticies of a vertex
-func (g *Graph) Origins(vertex string) *Neighbours {
+// Origins returns all source components of a component
+func (g *Graph) Origins(component string) *Neighbours {
 	var n Neighbours
 
 	for _, edge := range g.Edges {
-		if edge.Destination == vertex {
-			n = append(n, g.Vertex(edge.Source))
+		if edge.Destination == component {
+			n = append(n, g.Component(edge.Source))
 		}
 	}
 
@@ -162,7 +174,7 @@ func (g *Graph) LoadEdges(edges []Edge) {
 }
 
 // Graphviz outputs the graph in graphviz format
-func (g *Graph) Graphviz(start Vertex) string {
+func (g *Graph) Graphviz() string {
 	var output []string
 
 	output = append(output, "digraph G {")
@@ -177,12 +189,12 @@ func (g *Graph) Graphviz(start Vertex) string {
 }
 
 // Diff two graphs
-func (g *Graph) Diff(og *Graph) error {
-	//for _, ov := g.Vertices {
+func (g *Graph) Diff(og *Graph) (*Graph, error) {
+	//for _, ov := g.Components {
 
 	//}
 
-	return nil
+	return nil, nil
 }
 
 //func (g *Graph) DepthFirstSearch()

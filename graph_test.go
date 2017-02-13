@@ -10,65 +10,69 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type testVertex struct {
+type testComponent struct {
 	Name   string `json:"name"`
 	State  string `json:"state"`
 	Action string `json:"action"`
 }
 
-func (tv *testVertex) GetID() string {
+func (tv *testComponent) GetID() string {
 	return tv.Name
 }
 
-func (tv *testVertex) GetProvider() string {
+func (tv *testComponent) GetName() string {
+	return tv.Name
+}
+
+func (tv *testComponent) GetProvider() string {
 	return "test"
 }
 
-func (tv *testVertex) GetProviderID() string {
+func (tv *testComponent) GetProviderID() string {
 	return "test"
 }
 
-func (tv *testVertex) GetType() string {
+func (tv *testComponent) GetType() string {
 	return "test"
 }
 
-func (tv *testVertex) GetState() string {
+func (tv *testComponent) GetState() string {
 	return tv.State
 }
 
-func (tv *testVertex) SetState(state string) {
+func (tv *testComponent) SetState(state string) {
 	tv.State = state
 }
 
-func (tv *testVertex) GetAction() string {
+func (tv *testComponent) GetAction() string {
 	return tv.Action
 }
 
-func (tv *testVertex) SetAction(action string) {
+func (tv *testComponent) SetAction(action string) {
 	tv.Action = action
 }
 
-func (tv *testVertex) GetGroup() string {
+func (tv *testComponent) GetGroup() string {
 	return "test"
 }
 
-func (tv *testVertex) Dependencies() []string {
+func (tv *testComponent) Dependencies() []string {
 	return []string{}
 }
 
-func (tv *testVertex) Validate() error {
+func (tv *testComponent) Validate() error {
 	return nil
 }
 
-func (tv *testVertex) Diff(i interface{}) {}
-
-func (tv *testVertex) Rebuild(i interface{}) {}
-
-func (tv *testVertex) Update(i interface{}) bool {
+func (tv *testComponent) Diff(v Component) bool {
 	return true
 }
 
-func (tv *testVertex) IsStateful() bool {
+func (tv *testComponent) Rebuild(g *Graph) {}
+
+func (tv *testComponent) Update(v Component) {}
+
+func (tv *testComponent) IsStateful() bool {
 	return true
 }
 
@@ -76,28 +80,28 @@ func TestGraph(t *testing.T) {
 	Convey("Given a new graph", t, func() {
 		g := New()
 
-		Convey("When adding a new vertex", func() {
-			g.AddVertex(&testVertex{Name: "test"})
+		Convey("When adding a new component", func() {
+			g.AddComponent(&testComponent{Name: "test"})
 			Convey("It should be stored on the graph", func() {
-				So(len(g.Vertices), ShouldEqual, 1)
-				So(g.Vertices[0].GetID(), ShouldEqual, "test")
+				So(len(g.Components), ShouldEqual, 1)
+				So(g.Components[0].GetID(), ShouldEqual, "test")
 			})
 		})
 
-		Convey("When adding a duplicate vertex", func() {
-			g.AddVertex(&testVertex{Name: "test"})
+		Convey("When adding a duplicate component", func() {
+			g.AddComponent(&testComponent{Name: "test"})
 			Convey("It should not be stored on the graph", func() {
-				So(len(g.Vertices), ShouldEqual, 1)
+				So(len(g.Components), ShouldEqual, 1)
 			})
 		})
 
 		Convey("When connecting two verticies", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
 			err := g.Connect("test1", "test2")
 			Convey("It should create an edge between the two verticies", func() {
 				So(err, ShouldBeNil)
-				So(len(g.Vertices), ShouldEqual, 2)
+				So(len(g.Components), ShouldEqual, 2)
 				So(len(g.Edges), ShouldEqual, 1)
 				So(g.Edges[0].Source, ShouldEqual, "test1")
 				So(g.Edges[0].Destination, ShouldEqual, "test2")
@@ -105,12 +109,12 @@ func TestGraph(t *testing.T) {
 		})
 
 		Convey("When connecting two verticies mutually", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
 			err := g.ConnectMutually("test1", "test2")
 			Convey("It should create an edge between the two verticies", func() {
 				So(err, ShouldBeNil)
-				So(len(g.Vertices), ShouldEqual, 2)
+				So(len(g.Components), ShouldEqual, 2)
 				So(len(g.Edges), ShouldEqual, 2)
 				So(g.Edges[0].Source, ShouldEqual, "test1")
 				So(g.Edges[0].Destination, ShouldEqual, "test2")
@@ -126,10 +130,10 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
-		Convey("When getting the origin verticies of a vertex", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
-			g.AddVertex(&testVertex{Name: "test3"})
+		Convey("When getting the origin verticies of a component", func() {
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
+			g.AddComponent(&testComponent{Name: "test3"})
 			erra := g.Connect("test2", "test1")
 			errb := g.Connect("test3", "test1")
 			origins := g.Origins("test1")
@@ -142,10 +146,10 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
-		Convey("When getting the neighbouring verticies of a vertex", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
-			g.AddVertex(&testVertex{Name: "test3"})
+		Convey("When getting the neighbouring verticies of a component", func() {
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
+			g.AddComponent(&testComponent{Name: "test3"})
 			erra := g.Connect("test1", "test2")
 			errb := g.Connect("test1", "test3")
 			neighbours := g.Neighbours("test1")
@@ -158,18 +162,18 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
-		Convey("When disconnecting a vertex from the graph", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
-			g.AddVertex(&testVertex{Name: "test3"})
-			g.AddVertex(&testVertex{Name: "test4"})
-			g.AddVertex(&testVertex{Name: "test5"})
+		Convey("When disconnecting a component from the graph", func() {
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
+			g.AddComponent(&testComponent{Name: "test3"})
+			g.AddComponent(&testComponent{Name: "test4"})
+			g.AddComponent(&testComponent{Name: "test5"})
 			erra := g.Connect("test1", "test2")
 			errb := g.Connect("test2", "test3")
 			errc := g.Connect("test2", "test4")
 			errd := g.Connect("test4", "test5")
 
-			err := g.RemoveVertex("test2")
+			err := g.RemoveComponent("test2")
 			Convey("It should disconnect matching edges and reconnect them", func() {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
@@ -186,26 +190,26 @@ func TestGraph(t *testing.T) {
 			})
 		})
 
-		Convey("When getting a vertex by name", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			g.AddVertex(&testVertex{Name: "test2"})
-			vertex := g.Vertex("test2")
-			Convey("It should return the correct vertex", func() {
-				So(vertex, ShouldNotBeNil)
-				So(vertex.GetID(), ShouldEqual, "test2")
+		Convey("When getting a component by name", func() {
+			g.AddComponent(&testComponent{Name: "test1"})
+			g.AddComponent(&testComponent{Name: "test2"})
+			component := g.Component("test2")
+			Convey("It should return the correct component", func() {
+				So(component, ShouldNotBeNil)
+				So(component.GetID(), ShouldEqual, "test2")
 			})
 		})
 
-		Convey("When testing for an existing vertex", func() {
-			g.AddVertex(&testVertex{Name: "test1"})
-			exists := g.HasVertex("test1")
+		Convey("When testing for an existing component", func() {
+			g.AddComponent(&testComponent{Name: "test1"})
+			exists := g.HasComponent("test1")
 			Convey("It should return true", func() {
 				So(exists, ShouldBeTrue)
 			})
 		})
 
-		Convey("When testing for a non-existent vertex", func() {
-			exists := g.HasVertex("test1")
+		Convey("When testing for a non-existent component", func() {
+			exists := g.HasComponent("test1")
 			Convey("It should return false", func() {
 				So(exists, ShouldBeFalse)
 			})

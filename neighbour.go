@@ -5,12 +5,12 @@
 package graph
 
 // Neighbours represents a collection of dependent vertices
-type Neighbours []Vertex
+type Neighbours []Component
 
-// Exists checks if the group contains the vertex
-func (n *Neighbours) Exists(vertex string) bool {
+// Exists checks if the group contains the component
+func (n *Neighbours) Exists(component string) bool {
 	for _, v := range *n {
-		if v.GetID() == vertex {
+		if v.GetID() == component {
 			return true
 		}
 	}

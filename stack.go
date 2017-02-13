@@ -5,21 +5,21 @@
 package graph
 
 // NodeStack stores a collection of verticies
-type NodeStack []Vertex
+type NodeStack []Component
 
 // Append a verticies onto the stack
-func (n NodeStack) Append(i []Vertex) {
+func (n NodeStack) Append(i []Component) {
 	n = append(n, i...)
 }
 
 // Prepend a verticies onto the stack
-func (n NodeStack) Prepend(i []Vertex) {
+func (n NodeStack) Prepend(i []Component) {
 	n = append(i, n...)
 }
 
-// Pop a vertex from the stack
-func (n NodeStack) Pop() Vertex {
-	var x Vertex
+// Pop a component from the stack
+func (n NodeStack) Pop() Component {
+	var x Component
 	x, n = n[len(n)-1], n[:len(n)-1]
 	return x
 }
