@@ -14,7 +14,7 @@ import (
 // Graph ...
 type Graph struct {
 	Components        []Component `json:"components"`
-	ChangedComponents []Component `json:"changed_components"`
+	ChangedComponents []Component `json:"changes"`
 	Edges             []Edge      `json:"edges"`
 }
 
@@ -26,13 +26,13 @@ func New() *Graph {
 	}
 }
 
-// AddComponent adds a component to the graphs vertices if it does not already exist
-func (g *Graph) AddComponent(component Component) error {
-	if g.HasComponent(component.GetID()) {
-		return errors.New("Component already exists")
+// Component returns a component given the name matches
+func (g *Graph) Component(component string) Component {
+	for i, v := range g.Components {
+		if v.GetID() == component {
+			return g.Components[i]
+		}
 	}
-	g.Components = append(g.Components, component)
-
 	return nil
 }
 
@@ -46,13 +46,13 @@ func (g *Graph) HasComponent(componentID string) bool {
 	return false
 }
 
-// Component returns a component given the name matches
-func (g *Graph) Component(component string) Component {
-	for i, v := range g.Components {
-		if v.GetID() == component {
-			return g.Components[i]
-		}
+// AddComponent adds a component to the graphs vertices if it does not already exist
+func (g *Graph) AddComponent(component Component) error {
+	if g.HasComponent(component.GetID()) {
+		return errors.New("Component already exists: " + component.GetID())
 	}
+	g.Components = append(g.Components, component)
+
 	return nil
 }
 
@@ -66,28 +66,8 @@ func (g *Graph) UpdateComponent(component Component) {
 	}
 }
 
-// Connect adds a dependency between two vertices
-func (g *Graph) Connect(source, destination string) error {
-	if !g.HasComponent(source) || !g.HasComponent(destination) {
-		return errors.New("Could not connect Component, does not exist")
-	}
-
-	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
-
-	return nil
-}
-
-// ConnectMutually connects two vertices to eachother
-func (g *Graph) ConnectMutually(source, destination string) error {
-	err := g.Connect(source, destination)
-	if err != nil {
-		return err
-	}
-	return g.Connect(destination, source)
-}
-
-// RemoveComponent removes a component from the graph. It will connect any neighbour/origin components together
-func (g *Graph) RemoveComponent(name string) error {
+// DisconnectComponent removes a component from the graph. It will connect any neighbour/origin components together
+func (g *Graph) DisconnectComponent(name string) error {
 	origins := g.Origins(name)
 
 	for i := len(g.Edges) - 1; i >= 0; i-- {
@@ -109,6 +89,26 @@ func (g *Graph) RemoveComponent(name string) error {
 	}
 
 	return nil
+}
+
+// Connect adds a dependency between two vertices
+func (g *Graph) Connect(source, destination string) error {
+	if !g.HasComponent(source) || !g.HasComponent(destination) {
+		return errors.New("Could not connect Component, does not exist")
+	}
+
+	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
+
+	return nil
+}
+
+// ConnectMutually connects two vertices to eachother
+func (g *Graph) ConnectMutually(source, destination string) error {
+	err := g.Connect(source, destination)
+	if err != nil {
+		return err
+	}
+	return g.Connect(destination, source)
 }
 
 // ComponentByProviderID : returns a single component by matching provider id

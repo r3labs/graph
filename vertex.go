@@ -21,5 +21,6 @@ type Component interface {
 	Rebuild(*Graph)         // rebuilds the internal state of the component, a component set is passed in
 	Validate() error        // validates the component's values
 	Dependencies() []string // returns a collection of parent component id's
+	SetDefaultVariables()   // sets the default variables for a component
 	IsStateful() bool       // returns if the component is stateful. This is important to work out if a component can be skipped when deleting its dependencies (pruning).
 }

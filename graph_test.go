@@ -68,6 +68,8 @@ func (tv *testComponent) Diff(v Component) bool {
 	return true
 }
 
+func (tv *testComponent) SetDefaultVariables() {}
+
 func (tv *testComponent) Rebuild(g *Graph) {}
 
 func (tv *testComponent) Update(v Component) {}
@@ -173,7 +175,7 @@ func TestGraph(t *testing.T) {
 			errc := g.Connect("test2", "test4")
 			errd := g.Connect("test4", "test5")
 
-			err := g.RemoveComponent("test2")
+			err := g.DisconnectComponent("test2")
 			Convey("It should disconnect matching edges and reconnect them", func() {
 				So(erra, ShouldBeNil)
 				So(errb, ShouldBeNil)
