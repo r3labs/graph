@@ -13,9 +13,9 @@ import (
 
 // Graph ...
 type Graph struct {
-	Components        []Component `json:"components"`
-	ChangedComponents []Component `json:"changes"`
-	Edges             []Edge      `json:"edges"`
+	Components []Component `json:"components"`
+	Changes    []Component `json:"changes,omitempty"`
+	Edges      []Edge      `json:"edges,omitempty"`
 }
 
 // New returns a new graph
@@ -91,13 +91,20 @@ func (g *Graph) DisconnectComponent(name string) error {
 	return nil
 }
 
+// connect is the internal method for connecting two verticies, it provides less checks than publicly exposed methods
+func (g *Graph) connect(source, destination string) {
+	if g.Connected(source, destination) != true {
+		g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
+	}
+}
+
 // Connect adds a dependency between two vertices
 func (g *Graph) Connect(source, destination string) error {
 	if !g.HasComponent(source) || !g.HasComponent(destination) {
 		return errors.New("Could not connect Component, does not exist")
 	}
 
-	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
+	g.connect(source, destination)
 
 	return nil
 }
@@ -109,6 +116,40 @@ func (g *Graph) ConnectMutually(source, destination string) error {
 		return err
 	}
 	return g.Connect(destination, source)
+}
+
+// ConnectSequential adds a dependency between two vertices. If the source has more than 1 neighbouring vertex, the destination vertex will be connected to that.
+func (g *Graph) ConnectSequential(source, destination string) error {
+	if !g.HasComponent(source) {
+		source = "start"
+	}
+
+	if !g.HasComponent(destination) {
+		return errors.New("Could not connect Component, does not exist")
+	}
+
+	c := g.Component(destination)
+	gc := g.Neighbours(source).GetComponentGroup(c.GetGroup())
+
+	for gc != nil {
+		source = gc.GetID()
+		gc = g.Neighbours(source).GetComponentGroup(c.GetGroup())
+	}
+
+	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
+
+	return nil
+}
+
+// Connected returns true if two components are connected
+func (g *Graph) Connected(source, destination string) bool {
+	for _, edge := range g.Edges {
+		if edge.Source == source && edge.Destination == destination {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ComponentByProviderID : returns a single component by matching provider id
@@ -158,19 +199,42 @@ func (g *Graph) LengthBetween(source, destination string) int {
 	return -1
 }
 
-// ToJSON serialises the graph as json
-func (g *Graph) ToJSON() ([]byte, error) {
-	return json.Marshal(g)
-}
+// Diff : diff two graphs, new, modified or removed components will be moved to Changes, and components will be
+func (g *Graph) Diff(og *Graph) (*Graph, error) {
+	// new temporary graph
+	ng := New()
 
-// FromJSON loads the graph from json
-func (g *Graph) FromJSON(data []byte) error {
-	return json.Unmarshal(data, g)
-}
+	for _, c := range g.Components {
+		oc := og.Component(c.GetID())
+		if oc != nil {
+			if c.Diff(oc) {
+				c.SetAction("update")
+				c.SetState("waiting")
+				ng.AddComponent(c)
+			}
+		} else {
+			c.SetAction("create")
+			c.SetState("waiting")
+			ng.AddComponent(c)
+		}
+	}
 
-// LoadEdges loads a graphs edges
-func (g *Graph) LoadEdges(edges []Edge) {
-	g.Edges = edges
+	for _, oc := range og.Components {
+		c := g.Component(oc.GetID())
+		if c == nil {
+			oc.SetAction("delete")
+			oc.SetState("waiting")
+			ng.AddComponent(oc)
+		}
+	}
+
+	ng.SetDiffDependencies()
+
+	// Set changes + edges on original graph
+	og.Changes = ng.Components
+	og.Edges = ng.Edges
+
+	return og, nil
 }
 
 // Graphviz outputs the graph in graphviz format
@@ -188,13 +252,49 @@ func (g *Graph) Graphviz() string {
 	return strings.Join(output, "\n")
 }
 
-// Diff two graphs
-func (g *Graph) Diff(og *Graph) (*Graph, error) {
-	//for _, ov := g.Components {
+// SetDiffDependencies rebuilds the graph's dependencies when diffing
+func (g *Graph) SetDiffDependencies() {
+	// This needs improvement
 
-	//}
+	g.Edges = make([]Edge, 0)
 
-	return nil, nil
+	for _, c := range g.Components {
+		for _, dep := range c.Dependencies() {
+			switch c.GetAction() {
+			case "delete":
+				g.Connect(c.GetID(), dep)
+			case "update":
+				g.ConnectSequential(dep, c.GetID())
+			case "create":
+				g.Connect(dep, c.GetID())
+			}
+		}
+	}
+
+	g.SetStartFinish()
 }
 
-//func (g *Graph) DepthFirstSearch()
+// SetStartFinish sets a start and finish point
+func (g *Graph) SetStartFinish() {
+	for _, c := range g.Components {
+		o := g.Origins(c.GetID())
+		n := g.Neighbours(c.GetID())
+
+		if len(*o) < 1 {
+			g.connect("start", c.GetID())
+		}
+
+		if len(*n) < 1 {
+			g.connect(c.GetID(), "end")
+		}
+	}
+}
+
+// ToJSON serialises the graph as json
+func (g *Graph) ToJSON() ([]byte, error) {
+	return json.Marshal(g)
+}
+
+// func (g *Graph) DepthFirstSearch()
+
+// func (g *Graph) CycleDetection()

@@ -22,10 +22,24 @@ func (n *Neighbours) Unique() *Neighbours {
 	var un Neighbours
 
 	for _, v := range *n {
+		if v == nil {
+			continue
+		}
 		if !un.Exists(v.GetID()) {
 			un = append(un, v)
 		}
 	}
 
 	return &un
+}
+
+// GetComponentGroup returns true if a component matching a particular group is found
+func (n *Neighbours) GetComponentGroup(group string) Component {
+	for _, v := range *n {
+		if v.GetGroup() != "" && v.GetGroup() == group {
+			return v
+		}
+	}
+
+	return nil
 }
