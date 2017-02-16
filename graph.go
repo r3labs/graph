@@ -36,6 +36,21 @@ func (g *Graph) Component(component string) Component {
 	return nil
 }
 
+// ComponentAll returns a component from either changes or components given the name matches
+func (g *Graph) ComponentAll(component string) Component {
+	for i, v := range g.Changes {
+		if v.GetID() == component {
+			return g.Changes[i]
+		}
+	}
+	for i, v := range g.Components {
+		if v.GetID() == component {
+			return g.Components[i]
+		}
+	}
+	return nil
+}
+
 // HasComponent finds if the specified component exists
 func (g *Graph) HasComponent(componentID string) bool {
 	for _, v := range g.Components {
@@ -244,7 +259,12 @@ func (g *Graph) Graphviz() string {
 	output = append(output, "digraph G {")
 
 	for _, edge := range g.Edges {
-		output = append(output, fmt.Sprintf("  \"%s\" -> \"%s\"", edge.Source, edge.Destination))
+		dest := g.ComponentAll(edge.Destination)
+		if dest != nil {
+			output = append(output, fmt.Sprintf("  \"%s\" -> \"%s\" [label=\"%s\"]", edge.Source, edge.Destination, dest.GetAction()))
+		} else {
+			output = append(output, fmt.Sprintf("  \"%s\" -> \"%s\"", edge.Source, edge.Destination))
+		}
 	}
 
 	output = append(output, "}")
