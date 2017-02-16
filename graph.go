@@ -136,7 +136,7 @@ func (g *Graph) ConnectSequential(source, destination string) error {
 		gc = g.Neighbours(source).GetComponentGroup(c.GetGroup())
 	}
 
-	g.Edges = append(g.Edges, Edge{Source: source, Destination: destination, Length: 1})
+	g.connect(source, destination)
 
 	return nil
 }
@@ -262,10 +262,12 @@ func (g *Graph) SetDiffDependencies() {
 		for _, dep := range c.Dependencies() {
 			switch c.GetAction() {
 			case "delete":
-				g.Connect(c.GetID(), dep)
+				if c.IsStateful() {
+					g.Connect(c.GetID(), dep)
+				}
 			case "update":
 				g.ConnectSequential(dep, c.GetID())
-			case "create":
+			case "create", "find":
 				g.Connect(dep, c.GetID())
 			}
 		}
