@@ -167,15 +167,9 @@ func (g *Graph) Connected(source, destination string) bool {
 	return false
 }
 
-// ComponentByProviderID : returns a single component by matching provider id
-func (g *Graph) ComponentByProviderID(id string) Component {
-	for _, component := range g.Components {
-		if component.GetProviderID() == id {
-			return component
-		}
-	}
-
-	return nil
+// GetComponents returns a component group that can be filtered
+func (g *Graph) GetComponents() ComponentGroup {
+	return g.Components
 }
 
 // Neighbours returns all depencencies of a component
@@ -220,6 +214,10 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	ng := New()
 
 	for _, c := range g.Components {
+		if c.GetAction() == "none" {
+			continue
+		}
+
 		oc := og.Component(c.GetID())
 		if oc != nil {
 			if c.Diff(oc) {

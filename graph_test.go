@@ -56,6 +56,14 @@ func (tv *testComponent) GetGroup() string {
 	return "test"
 }
 
+func (tv *testComponent) GetTags() map[string]string {
+	return map[string]string{}
+}
+
+func (tv *testComponent) GetTag(string) string {
+	return ""
+}
+
 func (tv *testComponent) Dependencies() []string {
 	return []string{}
 }
