@@ -9,10 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 // Graph ...
 type Graph struct {
+	ID         string      `json:"id"`
 	Components []Component `json:"components"`
 	Changes    []Component `json:"changes,omitempty"`
 	Edges      []Edge      `json:"edges,omitempty"`
@@ -77,6 +80,15 @@ func (g *Graph) UpdateComponent(component Component) {
 		if g.Components[i].GetID() == component.GetID() {
 			g.Components[i] = component
 			return
+		}
+	}
+}
+
+// DeleteComponent deletes a component from the graph
+func (g *Graph) DeleteComponent(component Component) {
+	for i := len(g.Components) - 1; i >= 0; i-- {
+		if g.Components[i].GetID() == component.GetID() {
+			g.Components = append(g.Components[:i], g.Components[i+1:]...)
 		}
 	}
 }
@@ -313,6 +325,24 @@ func (g *Graph) SetStartFinish() {
 // ToJSON serialises the graph as json
 func (g *Graph) ToJSON() ([]byte, error) {
 	return json.Marshal(g)
+}
+
+// Load loads a graph from json
+func (g *Graph) Load(gg map[string]interface{}) error {
+	components := gg["components"].([]interface{})
+	changes := gg["changes"].([]interface{})
+
+	for i := 0; i < len(components); i++ {
+		c := components[i].(map[string]interface{})
+		components[i] = generic(c)
+	}
+
+	for i := 0; i < len(changes); i++ {
+		c := changes[i].(map[string]interface{})
+		changes[i] = generic(c)
+	}
+
+	return mapstructure.Decode(gg, g)
 }
 
 // func (g *Graph) DepthFirstSearch()

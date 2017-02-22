@@ -95,3 +95,13 @@ func (gc *GenericComponent) Update(v Component) {}
 func (gc *GenericComponent) IsStateful() bool {
 	return true
 }
+
+func generic(m map[string]interface{}) *GenericComponent {
+	c := make(GenericComponent)
+
+	for k, v := range m {
+		c[k] = v
+	}
+
+	return &c
+}
