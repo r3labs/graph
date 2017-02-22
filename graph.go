@@ -238,7 +238,9 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 				ng.AddComponent(c)
 			}
 		} else {
-			c.SetAction("create")
+			if c.GetAction() != "find" {
+				c.SetAction("create")
+			}
 			c.SetState("waiting")
 			ng.AddComponent(c)
 		}
@@ -334,12 +336,12 @@ func (g *Graph) Load(gg map[string]interface{}) error {
 
 	for i := 0; i < len(components); i++ {
 		c := components[i].(map[string]interface{})
-		components[i] = generic(c)
+		components[i] = MapGenericComponent(c)
 	}
 
 	for i := 0; i < len(changes); i++ {
 		c := changes[i].(map[string]interface{})
-		changes[i] = generic(c)
+		changes[i] = MapGenericComponent(c)
 	}
 
 	return mapstructure.Decode(gg, g)

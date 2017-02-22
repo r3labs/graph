@@ -96,7 +96,7 @@ func (gc *GenericComponent) IsStateful() bool {
 	return true
 }
 
-func generic(m map[string]interface{}) *GenericComponent {
+func MapGenericComponent(m map[string]interface{}) *GenericComponent {
 	c := make(GenericComponent)
 
 	for k, v := range m {
