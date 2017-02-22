@@ -5,12 +5,12 @@
 package graph
 
 // Neighbours represents a collection of dependent vertices
-type Neighbours []Vertex
+type Neighbours []Component
 
-// Exists checks if the group contains the vertex
-func (n *Neighbours) Exists(vertex string) bool {
+// Exists checks if the group contains the component
+func (n *Neighbours) Exists(component string) bool {
 	for _, v := range *n {
-		if v.Name() == vertex {
+		if v.GetID() == component {
 			return true
 		}
 	}
@@ -19,13 +19,27 @@ func (n *Neighbours) Exists(vertex string) bool {
 
 // Unique returns a new collection of Vertices that are unique
 func (n *Neighbours) Unique() *Neighbours {
-	un := Neighbours{}
+	var un Neighbours
 
 	for _, v := range *n {
-		if !un.Exists(v.Name()) {
+		if v == nil {
+			continue
+		}
+		if !un.Exists(v.GetID()) {
 			un = append(un, v)
 		}
 	}
 
 	return &un
+}
+
+// GetComponentGroup returns true if a component matching a particular group is found
+func (n *Neighbours) GetComponentGroup(group string) Component {
+	for _, v := range *n {
+		if v.GetGroup() != "" && v.GetGroup() == group {
+			return v
+		}
+	}
+
+	return nil
 }
