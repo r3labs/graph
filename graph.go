@@ -16,6 +16,7 @@ import (
 // Graph ...
 type Graph struct {
 	ID         string      `json:"id"`
+	Action     string      `json:"action"`
 	Components []Component `json:"components"`
 	Changes    []Component `json:"changes,omitempty"`
 	Edges      []Edge      `json:"edges,omitempty"`
