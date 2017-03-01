@@ -258,11 +258,15 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 
 	ng.SetDiffDependencies()
 
-	// Set changes + edges on original graph
-	og.Changes = ng.Components
-	og.Edges = ng.Edges
+	// Move changed components to changes, leave components with no action
+	for i := len(ng.Components) - 1; i >= 0; i-- {
+		if ng.Components[i].GetAction() != "none" {
+			ng.Changes = append(ng.Changes, ng.Components[i])
+			ng.Components = append(ng.Components[:i], ng.Components[i+1:]...)
+		}
+	}
 
-	return og, nil
+	return ng, nil
 }
 
 // Graphviz outputs the graph in graphviz format
