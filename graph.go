@@ -159,7 +159,11 @@ func (g *Graph) ConnectSequential(source, destination string) error {
 	c := g.Component(destination)
 	gc := g.Neighbours(source).GetComponentGroup(c.GetGroup())
 
+	// ensure that source does not get sent to itself (destination)
 	for gc != nil {
+		if destination == gc.GetID() {
+			break
+		}
 		source = gc.GetID()
 		gc = g.Neighbours(source).GetComponentGroup(c.GetGroup())
 	}
