@@ -227,10 +227,6 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	ng := New()
 
 	for _, c := range g.Components {
-		if c.GetAction() == "none" {
-			continue
-		}
-
 		oc := og.Component(c.GetID())
 		if oc != nil {
 			if c.Diff(oc) {
@@ -239,7 +235,7 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 				ng.AddComponent(c)
 			}
 		} else {
-			if c.GetAction() != "find" {
+			if c.GetAction() != "find" && c.GetAction() != "none" {
 				c.SetAction("create")
 			}
 			c.SetState("waiting")
@@ -256,15 +252,18 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 		}
 	}
 
+	// Move remove changed components with no action (action == none)
+	unactionable := ng.transferUnactionable()
+
+	// build the edges
 	ng.SetDiffDependencies()
 
-	// Move changed components to changes, leave components with no action
-	for i := len(ng.Components) - 1; i >= 0; i-- {
-		if ng.Components[i].GetAction() != "none" {
-			ng.Changes = append(ng.Changes, ng.Components[i])
-			ng.Components = append(ng.Components[:i], ng.Components[i+1:]...)
-		}
-	}
+	// transfer old components
+	ng.Changes = ng.Components
+	ng.Components = og.Components
+
+	// replace old unactionables with new unactionables
+	ng.bulkReplace(unactionable)
 
 	return ng, nil
 }
@@ -350,6 +349,28 @@ func (g *Graph) Load(gg map[string]interface{}) error {
 	}
 
 	return mapstructure.Decode(gg, g)
+}
+
+func (g *Graph) transferUnactionable() []Component {
+	var unactionable []Component
+
+	for i := len(g.Components) - 1; i >= 0; i-- {
+		if g.Components[i].GetAction() == "none" {
+			unactionable = append(unactionable, g.Components[i])
+			g.Components = append(g.Components[:i], g.Components[i+1:]...)
+		}
+	}
+
+	return unactionable
+}
+
+func (g *Graph) bulkReplace(components []Component) {
+	for _, c := range components {
+		if g.Component(c.GetID()) != nil {
+			g.DeleteComponent(c)
+		}
+		g.AddComponent(c)
+	}
 }
 
 // func (g *Graph) DepthFirstSearch()
