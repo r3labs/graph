@@ -44,6 +44,19 @@ func (cg ComponentGroup) ByGroup(tag, group string) ComponentGroup {
 	return c
 }
 
+// ByName ...
+func (cg ComponentGroup) ByName(name string) ComponentGroup {
+	var c []Component
+
+	for _, component := range cg {
+		if component.GetName() == name {
+			c = append(c, component)
+		}
+	}
+
+	return c
+}
+
 // NameValues ...
 func (cg ComponentGroup) NameValues() []string {
 	var names []string
