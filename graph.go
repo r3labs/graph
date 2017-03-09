@@ -13,6 +13,21 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const (
+	//ACTIONCREATE : action create
+	ACTIONCREATE = "create"
+	// ACTIONUPDATE : action update
+	ACTIONUPDATE = "update"
+	// ACTIONDELETE : action delete
+	ACTIONDELETE = "delete"
+	// ACTIONFIND : action find
+	ACTIONFIND = "find"
+	// ACTIONGET : action get
+	ACTIONGET = "get"
+	// ACTIONNONE : action none
+	ACTIONNONE = "none"
+)
+
 // Graph ...
 type Graph struct {
 	ID         string      `json:"id"`
@@ -234,15 +249,15 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 		oc := og.Component(c.GetID())
 		if oc != nil {
 			if c.Diff(oc) {
-				if c.GetAction() != "none" {
-					c.SetAction("update")
+				if c.GetAction() != ACTIONNONE {
+					c.SetAction(ACTIONUPDATE)
 				}
 				c.SetState("waiting")
 				ng.AddComponent(c)
 			}
 		} else {
-			if c.GetAction() != "find" && c.GetAction() != "none" {
-				c.SetAction("create")
+			if c.GetAction() != ACTIONFIND && c.GetAction() != ACTIONNONE {
+				c.SetAction(ACTIONCREATE)
 			}
 			c.SetState("waiting")
 			ng.AddComponent(c)
@@ -252,7 +267,7 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	for _, oc := range og.Components {
 		c := g.Component(oc.GetID())
 		if c == nil {
-			oc.SetAction("delete")
+			oc.SetAction(ACTIONDELETE)
 			oc.SetState("waiting")
 			ng.AddComponent(oc)
 		}
@@ -303,13 +318,13 @@ func (g *Graph) SetDiffDependencies() {
 	for _, c := range g.Components {
 		for _, dep := range c.Dependencies() {
 			switch c.GetAction() {
-			case "delete":
+			case ACTIONDELETE:
 				if c.IsStateful() {
 					g.Connect(c.GetID(), dep)
 				}
-			case "update":
+			case ACTIONUPDATE:
 				g.ConnectSequential(dep, c.GetID())
-			case "create", "find":
+			case ACTIONCREATE, ACTIONFIND:
 				g.Connect(dep, c.GetID())
 			}
 		}
