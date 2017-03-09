@@ -267,7 +267,9 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	for _, oc := range og.Components {
 		c := g.Component(oc.GetID())
 		if c == nil {
-			oc.SetAction(ACTIONDELETE)
+			if oc.GetAction() != ACTIONNONE {
+				oc.SetAction(ACTIONDELETE)
+			}
 			oc.SetState("waiting")
 			ng.AddComponent(oc)
 		}
