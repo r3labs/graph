@@ -234,7 +234,9 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 		oc := og.Component(c.GetID())
 		if oc != nil {
 			if c.Diff(oc) {
-				c.SetAction("update")
+				if c.GetAction() != "none" {
+					c.SetAction("update")
+				}
 				c.SetState("waiting")
 				ng.AddComponent(c)
 			}
