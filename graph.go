@@ -358,17 +358,21 @@ func (g *Graph) ToJSON() ([]byte, error) {
 
 // Load loads a graph from json
 func (g *Graph) Load(gg map[string]interface{}) error {
-	components := gg["components"].([]interface{})
-	changes := gg["changes"].([]interface{})
 
-	for i := 0; i < len(components); i++ {
-		c := components[i].(map[string]interface{})
-		components[i] = MapGenericComponent(c)
+	components, ok := gg["components"].([]interface{})
+	if ok {
+		for i := 0; i < len(components); i++ {
+			c := components[i].(map[string]interface{})
+			components[i] = MapGenericComponent(c)
+		}
 	}
 
-	for i := 0; i < len(changes); i++ {
-		c := changes[i].(map[string]interface{})
-		changes[i] = MapGenericComponent(c)
+	changes, ok := gg["changes"].([]interface{})
+	if ok {
+		for i := 0; i < len(changes); i++ {
+			c := changes[i].(map[string]interface{})
+			changes[i] = MapGenericComponent(c)
+		}
 	}
 
 	return mapstructure.Decode(gg, g)
