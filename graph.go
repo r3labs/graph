@@ -265,6 +265,10 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	}
 
 	for _, oc := range og.Components {
+		if oc.IsStateful() != true {
+			continue
+		}
+
 		c := g.Component(oc.GetID())
 		if c == nil {
 			if oc.GetAction() != ACTIONNONE {
