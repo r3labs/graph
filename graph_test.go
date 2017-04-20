@@ -11,9 +11,11 @@ import (
 )
 
 type testComponent struct {
-	Name   string `json:"name"`
-	State  string `json:"state"`
-	Action string `json:"action"`
+	Name    string   `json:"name"`
+	State   string   `json:"state"`
+	Action  string   `json:"action"`
+	Deps    []string `json:"deps"`
+	TestVal int      `json:"test_val"`
 }
 
 func (tv *testComponent) GetID() string {
@@ -65,7 +67,7 @@ func (tv *testComponent) GetTag(string) string {
 }
 
 func (tv *testComponent) Dependencies() []string {
-	return []string{}
+	return tv.Deps
 }
 
 func (tv *testComponent) Validate() error {
@@ -73,7 +75,7 @@ func (tv *testComponent) Validate() error {
 }
 
 func (tv *testComponent) Diff(v Component) bool {
-	return true
+	return tv.TestVal != v.(*testComponent).TestVal
 }
 
 func (tv *testComponent) SetDefaultVariables() {}
@@ -222,6 +224,126 @@ func TestGraph(t *testing.T) {
 			exists := g.HasComponent("test1")
 			Convey("It should return false", func() {
 				So(exists, ShouldBeFalse)
+			})
+		})
+	})
+
+	Convey("Given an existing graph", t, func() {
+		ng := New()
+		_ = ng.AddComponent(&testComponent{Name: "1", TestVal: 1})
+		_ = ng.AddComponent(&testComponent{Name: "2", Deps: []string{"1"}, TestVal: 1})
+		_ = ng.AddComponent(&testComponent{Name: "3", Deps: []string{"1"}, TestVal: 1})
+		_ = ng.AddComponent(&testComponent{Name: "4", Deps: []string{"2", "3"}, TestVal: 1})
+
+		Convey("That has no verticies", func() {
+			eg := New()
+			Convey("When diffing the new populated graph", func() {
+				g, err := ng.Diff(eg)
+				Convey("It should return the correct changes", func() {
+					So(err, ShouldBeNil)
+					So(len(g.Changes), ShouldEqual, 4)
+					So(g.Changes[0].GetID(), ShouldEqual, "1")
+					So(g.Changes[0].GetAction(), ShouldEqual, ACTIONCREATE)
+					So(g.Changes[1].GetID(), ShouldEqual, "2")
+					So(g.Changes[1].GetAction(), ShouldEqual, ACTIONCREATE)
+					So(g.Changes[2].GetID(), ShouldEqual, "3")
+					So(g.Changes[2].GetAction(), ShouldEqual, ACTIONCREATE)
+					So(g.Changes[3].GetID(), ShouldEqual, "4")
+					So(g.Changes[3].GetAction(), ShouldEqual, ACTIONCREATE)
+				})
+				Convey("It should return the correct edges", func() {
+					So(len(g.Edges), ShouldEqual, 6)
+					So(g.Edges[0].Source, ShouldEqual, "1")
+					So(g.Edges[0].Destination, ShouldEqual, "2")
+					So(g.Edges[1].Source, ShouldEqual, "1")
+					So(g.Edges[1].Destination, ShouldEqual, "3")
+					So(g.Edges[2].Source, ShouldEqual, "2")
+					So(g.Edges[2].Destination, ShouldEqual, "4")
+					So(g.Edges[3].Source, ShouldEqual, "3")
+					So(g.Edges[3].Destination, ShouldEqual, "4")
+					So(g.Edges[4].Source, ShouldEqual, "start")
+					So(g.Edges[4].Destination, ShouldEqual, "1")
+					So(g.Edges[4].Source, ShouldEqual, "start")
+					So(g.Edges[4].Destination, ShouldEqual, "1")
+					So(g.Edges[5].Source, ShouldEqual, "4")
+					So(g.Edges[5].Destination, ShouldEqual, "end")
+				})
+			})
+		})
+
+		Convey("That is missing vertex '3'", func() {
+			eg := New()
+			_ = eg.AddComponent(&testComponent{Name: "1", TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "2", Deps: []string{"1"}, TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "4", Deps: []string{"2"}, TestVal: 1})
+			Convey("When diffing the new populated graph", func() {
+				g, err := ng.Diff(eg)
+				Convey("It should mark vertex '3' for creation", func() {
+					So(err, ShouldBeNil)
+					So(len(g.Changes), ShouldEqual, 1)
+					So(g.Changes[0].GetID(), ShouldEqual, "3")
+					So(g.Changes[0].GetAction(), ShouldEqual, ACTIONCREATE)
+				})
+				Convey("It should return the correct edges", func() {
+					So(len(g.Edges), ShouldEqual, 2)
+					So(g.Edges[0].Source, ShouldEqual, "start")
+					So(g.Edges[0].Destination, ShouldEqual, "3")
+					So(g.Edges[1].Source, ShouldEqual, "3")
+					So(g.Edges[1].Destination, ShouldEqual, "end")
+				})
+			})
+		})
+
+		Convey("That has an additional vertex '5'", func() {
+			eg := New()
+			_ = eg.AddComponent(&testComponent{Name: "1", TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "2", Deps: []string{"1"}, TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "3", Deps: []string{"1"}, TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "4", Deps: []string{"2"}, TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "5", Deps: []string{"1"}, TestVal: 1})
+			Convey("When diffing the new populated graph", func() {
+				g, err := ng.Diff(eg)
+				Convey("It should mark vertex '3' for creation", func() {
+					So(err, ShouldBeNil)
+					So(len(g.Changes), ShouldEqual, 1)
+					So(g.Changes[0].GetID(), ShouldEqual, "5")
+					So(g.Changes[0].GetAction(), ShouldEqual, ACTIONDELETE)
+				})
+				Convey("It should return the correct edges", func() {
+					So(len(g.Edges), ShouldEqual, 2)
+					So(g.Edges[0].Source, ShouldEqual, "start")
+					So(g.Edges[0].Destination, ShouldEqual, "5")
+					So(g.Edges[1].Source, ShouldEqual, "5")
+					So(g.Edges[1].Destination, ShouldEqual, "end")
+				})
+			})
+		})
+
+		Convey("That has changes on its verticies", func() {
+			eg := New()
+			_ = eg.AddComponent(&testComponent{Name: "1", TestVal: 1})
+			_ = eg.AddComponent(&testComponent{Name: "2", Deps: []string{"1"}, TestVal: 2})
+			_ = eg.AddComponent(&testComponent{Name: "3", Deps: []string{"1"}, TestVal: 2})
+			_ = eg.AddComponent(&testComponent{Name: "4", Deps: []string{"2"}, TestVal: 1})
+			Convey("When diffing the new populated graph", func() {
+				g, err := ng.Diff(eg)
+				Convey("It should mark vertex '2' and '3' for update", func() {
+					So(err, ShouldBeNil)
+					So(len(g.Changes), ShouldEqual, 2)
+					So(g.Changes[0].GetID(), ShouldEqual, "2")
+					So(g.Changes[0].GetAction(), ShouldEqual, ACTIONUPDATE)
+					So(g.Changes[1].GetID(), ShouldEqual, "3")
+					So(g.Changes[1].GetAction(), ShouldEqual, ACTIONUPDATE)
+				})
+				Convey("It should return edges connected sequentially", func() {
+					So(len(g.Edges), ShouldEqual, 3)
+					So(g.Edges[0].Source, ShouldEqual, "start")
+					So(g.Edges[0].Destination, ShouldEqual, "2")
+					So(g.Edges[1].Source, ShouldEqual, "2")
+					So(g.Edges[1].Destination, ShouldEqual, "3")
+					So(g.Edges[2].Source, ShouldEqual, "3")
+					So(g.Edges[2].Destination, ShouldEqual, "end")
+				})
 			})
 		})
 	})
