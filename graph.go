@@ -31,6 +31,7 @@ const (
 // Graph ...
 type Graph struct {
 	ID         string      `json:"id"`
+	Name       string      `json:"name"`
 	Action     string      `json:"action"`
 	Components []Component `json:"components"`
 	Changes    []Component `json:"changes,omitempty"`
