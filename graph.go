@@ -30,12 +30,13 @@ const (
 
 // Graph ...
 type Graph struct {
-	ID         string      `json:"id"`
-	Name       string      `json:"name"`
-	Action     string      `json:"action"`
-	Components []Component `json:"components"`
-	Changes    []Component `json:"changes,omitempty"`
-	Edges      []Edge      `json:"edges,omitempty"`
+	ID         string                 `json:"id"`
+	Name       string                 `json:"name"`
+	Action     string                 `json:"action"`
+	Options    map[string]interface{} `json:"options"`
+	Components []Component            `json:"components"`
+	Changes    []Component            `json:"changes,omitempty"`
+	Edges      []Edge                 `json:"edges,omitempty"`
 }
 
 // New returns a new graph
