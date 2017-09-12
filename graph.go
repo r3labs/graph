@@ -206,6 +206,11 @@ func (g *Graph) GetComponents() ComponentGroup {
 	return g.Components
 }
 
+// GetChanges returns a component group that can be filtered
+func (g *Graph) GetChanges() ComponentGroup {
+	return g.Changes
+}
+
 // Neighbours returns all depencencies of a component
 func (g *Graph) Neighbours(component string) *Neighbours {
 	var n Neighbours
