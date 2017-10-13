@@ -32,6 +32,8 @@ const (
 type Graph struct {
 	ID         string                 `json:"id"`
 	Name       string                 `json:"name"`
+	UserID     int                    `json:"user_id"`
+	Username   string                 `json:"username"`
 	Action     string                 `json:"action"`
 	Options    map[string]interface{} `json:"options"`
 	Components []Component            `json:"components"`
