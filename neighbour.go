@@ -33,11 +33,27 @@ func (n *Neighbours) Unique() *Neighbours {
 	return &un
 }
 
-// GetComponentGroup returns true if a component matching a particular group is found
+// GetComponentGroup returns the first item in a components group
 func (n *Neighbours) GetComponentGroup(group string) Component {
 	for _, v := range *n {
 		if v.GetGroup() != "" && v.GetGroup() == group {
 			return v
+		}
+	}
+
+	return nil
+}
+
+func (n *Neighbours) GetSequentialDependency(id string) Component {
+	if id == "" {
+		return nil
+	}
+
+	for _, v := range *n {
+		for _, d := range v.SequentialDependencies() {
+			if d == id {
+				return v
+			}
 		}
 	}
 
