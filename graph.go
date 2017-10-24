@@ -165,8 +165,43 @@ func (g *Graph) ConnectMutually(source, destination string) error {
 	return g.Connect(destination, source)
 }
 
-// ConnectSequential adds a dependency between two vertices. If the source has more than 1 neighbouring vertex, the destination vertex will be connected to that.
-func (g *Graph) ConnectSequential(source, destination string) error {
+// ConnectComplex adds a dependency between two vertices. If the source has more than 1 neighbouring vertex, the destination vertex will be connected to that.
+func (g *Graph) ConnectComplex(source, destination string) error {
+	if !g.HasComponent(source) {
+		source = "start"
+	}
+
+	if !g.HasComponent(destination) {
+		return errors.New("Could not connect Component, does not exist")
+	}
+
+	c := g.Component(destination)
+
+	if len(c.SequentialDependencies()) < 1 {
+		g.connect(source, destination)
+		return nil
+	}
+
+	for _, sdep := range c.SequentialDependencies() {
+		gc := g.Neighbours(source).GetSequentialDependency(sdep)
+
+		// ensure that source does not get sent to itself (destination)
+		for gc != nil {
+			if destination == gc.GetID() {
+				break
+			}
+			source = gc.GetID()
+			gc = g.Neighbours(source).GetSequentialDependency(sdep)
+		}
+
+		g.connect(source, destination)
+	}
+
+	return nil
+}
+
+// ConnectComplexUpdate adds a dependency between two vertices. If the source has more than 1 neighbouring vertex, the destination vertex will be connected to that.
+func (g *Graph) ConnectComplexUpdate(source, destination string) error {
 	if !g.HasComponent(source) {
 		source = "start"
 	}
@@ -335,12 +370,12 @@ func (g *Graph) SetDiffDependencies() {
 			switch c.GetAction() {
 			case ACTIONDELETE:
 				if c.IsStateful() {
-					g.Connect(c.GetID(), dep)
+					g.ConnectComplex(c.GetID(), dep)
 				}
 			case ACTIONUPDATE:
-				g.ConnectSequential(dep, c.GetID())
+				g.ConnectComplexUpdate(dep, c.GetID())
 			case ACTIONCREATE, ACTIONFIND:
-				g.Connect(dep, c.GetID())
+				g.ConnectComplex(dep, c.GetID())
 			}
 		}
 	}

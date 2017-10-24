@@ -72,6 +72,11 @@ func (gc *GenericComponent) Dependencies() []string {
 	return []string{}
 }
 
+// SequentialDependencies : returns a list of origin components that restrict the execution of its dependents, allowing only one dependent component to be provisioned at a time (sequentially)
+func (gc *GenericComponent) SequentialDependencies() []string {
+	return []string{}
+}
+
 // Validate : validates the components values
 func (gc *GenericComponent) Validate() error {
 	return nil
