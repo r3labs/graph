@@ -44,6 +44,8 @@ func (n *Neighbours) GetComponentGroup(group string) Component {
 	return nil
 }
 
+// GetSequentialDependency retuens the sequentially dependent component based on
+// a given id if given
 func (n *Neighbours) GetSequentialDependency(id string) Component {
 	if id == "" {
 		return nil
