@@ -24,7 +24,7 @@ const (
 	ACTIONFIND = "find"
 	// ACTIONGET : action get
 	ACTIONGET = "get"
-	// ACTIONNONE : action none
+	// ACTIONNONE : action none, component wont be processed
 	ACTIONNONE = "none"
 )
 
@@ -404,9 +404,8 @@ func (g *Graph) ToJSON() ([]byte, error) {
 	return json.Marshal(g)
 }
 
-// Load loads a graph from json
+// Load loads a graph from map
 func (g *Graph) Load(gg map[string]interface{}) error {
-
 	components, ok := gg["components"].([]interface{})
 	if ok {
 		for i := 0; i < len(components); i++ {
