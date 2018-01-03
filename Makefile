@@ -11,6 +11,7 @@ test:
 	go test -v ./... --cover
 
 deps: dev-deps
+	go get -u github.com/r3labs/diff
 
 dev-deps:
 	go get -u github.com/smartystreets/goconvey/convey

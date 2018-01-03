@@ -292,7 +292,12 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 	for _, c := range g.Components {
 		oc := og.Component(c.GetID())
 		if oc != nil {
-			if c.Diff(oc) {
+			changes, err := c.Diff(oc)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(changes) > 0 {
 				if c.GetAction() != ACTIONNONE {
 					c.SetAction(ACTIONUPDATE)
 				}
