@@ -12,7 +12,7 @@ import (
 )
 
 type testComponent struct {
-	Name       string   `json:"name" diff:"-"`
+	Name       string   `json:"name" diff:"name,identifier"`
 	State      string   `json:"state" diff:"-"`
 	Action     string   `json:"action" diff:"-"`
 	Deps       []string `json:"deps" diff:"-"`

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/r3labs/diff"
 )
 
 const (
@@ -30,15 +31,16 @@ const (
 
 // Graph ...
 type Graph struct {
-	ID         string                 `json:"id"`
-	Name       string                 `json:"name"`
-	UserID     int                    `json:"user_id"`
-	Username   string                 `json:"username"`
-	Action     string                 `json:"action"`
-	Options    map[string]interface{} `json:"options"`
-	Components []Component            `json:"components"`
-	Changes    []Component            `json:"changes,omitempty"`
-	Edges      []Edge                 `json:"edges,omitempty"`
+	ID         string                 `json:"id" diff:"-"`
+	Name       string                 `json:"name" diff:"-"`
+	UserID     int                    `json:"user_id" diff:"-"`
+	Username   string                 `json:"username" diff:"-"`
+	Action     string                 `json:"action" diff:"-"`
+	Options    map[string]interface{} `json:"options" diff:"-"`
+	Components []Component            `json:"components" diff:"components"`
+	Changes    []Component            `json:"changes,omitempty" diff:"-"`
+	Edges      []Edge                 `json:"edges,omitempty" diff:"-"`
+	Changelog  diff.Changelog         `json:"changelog,omitempty" diff:"-"`
 }
 
 // New returns a new graph
@@ -286,6 +288,17 @@ func (g *Graph) LengthBetween(source, destination string) int {
 
 // Diff : diff two graphs, new, modified or removed components will be moved to Changes, and components will be
 func (g *Graph) Diff(og *Graph) (*Graph, error) {
+	g, err := g.diff(og, false)
+	return g, err
+}
+
+// DiffWithChangelog : produces a new build graph and changelog
+func (g *Graph) DiffWithChangelog(og *Graph) (*Graph, error) {
+	return g.diff(og, true)
+}
+
+// Diff : diff two graphs, new, modified or removed components will be moved to Changes, and components will be
+func (g *Graph) diff(og *Graph, changelog bool) (*Graph, error) {
 	// new temporary graph
 	ng := New()
 
@@ -301,13 +314,29 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 				if c.GetAction() != ACTIONNONE {
 					c.SetAction(ACTIONUPDATE)
 				}
+
 				c.SetState("waiting")
 				ng.AddComponent(c)
+
+				if changelog {
+					changes = prefixChanges(c.GetID(), changes)
+					ng.Changelog = append(ng.Changelog, changes...)
+				}
 			}
 		} else {
 			if c.GetAction() != ACTIONFIND && c.GetAction() != ACTIONNONE {
 				c.SetAction(ACTIONCREATE)
+
+				if changelog {
+					ng.Changelog = append(ng.Changelog, diff.Change{
+						Path: []string{c.GetID()},
+						Type: diff.CREATE,
+						From: nil,
+						To:   c,
+					})
+				}
 			}
+
 			c.SetState("waiting")
 			ng.AddComponent(c)
 		}
@@ -323,8 +352,18 @@ func (g *Graph) Diff(og *Graph) (*Graph, error) {
 			if oc.GetAction() != ACTIONNONE {
 				oc.SetAction(ACTIONDELETE)
 			}
+
 			oc.SetState("waiting")
 			ng.AddComponent(oc)
+
+			if changelog {
+				ng.Changelog = append(ng.Changelog, diff.Change{
+					Path: []string{oc.GetID()},
+					Type: diff.DELETE,
+					From: oc,
+					To:   nil,
+				})
+			}
 		}
 	}
 
