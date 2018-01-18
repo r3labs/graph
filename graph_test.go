@@ -7,16 +7,17 @@ package graph
 import (
 	"testing"
 
+	"github.com/r3labs/diff"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testComponent struct {
-	Name       string   `json:"name"`
-	State      string   `json:"state"`
-	Action     string   `json:"action"`
-	Deps       []string `json:"deps"`
-	Sequential []string `json:"sequential"`
-	TestVal    int      `json:"test_val"`
+	Name       string   `json:"name" diff:"name,identifier"`
+	State      string   `json:"state" diff:"-"`
+	Action     string   `json:"action" diff:"-"`
+	Deps       []string `json:"deps" diff:"-"`
+	Sequential []string `json:"sequential" diff:"-"`
+	TestVal    int      `json:"test_val" diff:"test_val"`
 }
 
 func (tv *testComponent) GetID() string {
@@ -75,8 +76,8 @@ func (tv *testComponent) Validate() error {
 	return nil
 }
 
-func (tv *testComponent) Diff(v Component) bool {
-	return tv.TestVal != v.(*testComponent).TestVal
+func (tv *testComponent) Diff(v Component) (diff.Changelog, error) {
+	return diff.Diff(tv, v)
 }
 
 func (tv *testComponent) SequentialDependencies() []string {

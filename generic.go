@@ -4,6 +4,8 @@
 
 package graph
 
+import "github.com/r3labs/diff"
+
 // GenericComponent is a representation of a component backed by a map[string]interface{}
 type GenericComponent map[string]interface{}
 
@@ -83,8 +85,8 @@ func (gc *GenericComponent) Validate() error {
 }
 
 // Diff : diff's the component against another component of the same type
-func (gc *GenericComponent) Diff(v Component) bool {
-	return true
+func (gc *GenericComponent) Diff(v Component) (diff.Changelog, error) {
+	return diff.Changelog{}, nil
 }
 
 // SetDefaultVariables : sets up the default template variables for a component
