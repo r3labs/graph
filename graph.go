@@ -328,12 +328,11 @@ func (g *Graph) diff(og *Graph, changelog bool) (*Graph, error) {
 				c.SetAction(ACTIONCREATE)
 
 				if changelog {
-					ng.Changelog = append(ng.Changelog, diff.Change{
-						Path: []string{c.GetID()},
-						Type: diff.CREATE,
-						From: nil,
-						To:   c,
-					})
+					changes, err := diff.StructValues(diff.CREATE, []string{c.GetID()}, c)
+					if err != nil {
+						return nil, err
+					}
+					ng.Changelog = append(ng.Changelog, changes...)
 				}
 			}
 
@@ -357,12 +356,12 @@ func (g *Graph) diff(og *Graph, changelog bool) (*Graph, error) {
 			ng.AddComponent(oc)
 
 			if changelog {
-				ng.Changelog = append(ng.Changelog, diff.Change{
-					Path: []string{oc.GetID()},
-					Type: diff.DELETE,
-					From: oc,
-					To:   nil,
-				})
+				changes, err := diff.StructValues(diff.DELETE, []string{oc.GetID()}, oc)
+				if err != nil {
+					return nil, err
+				}
+
+				ng.Changelog = append(ng.Changelog, changes...)
 			}
 		}
 	}
